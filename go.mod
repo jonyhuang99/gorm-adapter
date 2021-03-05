@@ -1,4 +1,4 @@
-module github.com/jonyhuang99/gorm-adapter
+module github.com/jonyhuang99/gorm-adapter/v2
 
 go 1.14
 
