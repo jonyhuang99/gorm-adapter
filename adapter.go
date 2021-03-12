@@ -18,8 +18,11 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"git.code.oa.com/trpc-go/trpc-go/log"
+	"math"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/casbin/casbin/v2/model"
 	"github.com/casbin/casbin/v2/persist"
@@ -247,14 +250,37 @@ func loadPolicyLine(line CasbinRule, model model.Model) {
 // LoadPolicy loads policy from database.
 func (a *Adapter) LoadPolicy(model model.Model) error {
 	var lines []CasbinRule
-	if err := a.db.Table(a.tablePrefix + "casbin_rule").Find(&lines).Error; err != nil {
+	var per = 3000
+
+	// 防止数量大，使用分页拉取
+	var count int
+	if err := a.db.Table(a.tablePrefix + "casbin_rule").Count(&count).Error; err != nil {
 		return err
 	}
+	log.Infof("LoadPolicy: total %d need to load", count)
 
-	for _, line := range lines {
-		loadPolicyLine(line, model)
+	allPage := int(math.Ceil(float64(count)/float64(per)))
+	loadedLines := 0
+	var page int
+	for page = 1; page <= allPage; page++ {
+		offset := (page - 1) * per
+		if err := a.db.Table(a.tablePrefix + "casbin_rule").Order("id desc").Offset(offset).Limit(per).Find(&lines).Error; err != nil {
+			return err
+		}
+
+		for _, line := range lines {
+			loadPolicyLine(line, model)
+			loadedLines = loadedLines + 1
+		}
 	}
 
+	if count != loadedLines {
+		log.Infof("LoadPolicy: loaded lines err total(%d) != loaded(%d), retry ...", count, loadedLines)
+		time.Sleep(time.Second)
+		return a.LoadPolicy(model)
+	} else {
+		log.Infof("LoadPolicy: loaded %d", int(count))
+	}
 	return nil
 }
 
