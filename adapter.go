@@ -264,7 +264,7 @@ func (a *Adapter) LoadPolicy(model model.Model) error {
 	var page int
 	for page = 1; page <= allPage; page++ {
 		offset := (page - 1) * per
-		if err := a.db.Table(a.tablePrefix + "casbin_rule").Order("id desc").Offset(offset).Limit(per).Find(&lines).Error; err != nil {
+		if err := a.db.Table(a.tablePrefix + "casbin_rule").Offset(offset).Limit(per).Find(&lines).Error; err != nil {
 			return err
 		}
 
