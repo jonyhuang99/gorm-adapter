@@ -3,6 +3,7 @@ module github.com/jonyhuang99/gorm-adapter/v2
 go 1.14
 
 require (
+	git.code.oa.com/omc/libraries v0.0.0-20210326105529-c568462f095d
 	git.code.oa.com/trpc-go/trpc-go v0.5.2
 	github.com/casbin/casbin/v2 v2.21.0
 	github.com/denisenkom/go-mssqldb v0.0.0-20200428022330-06a60b6afbbc // indirect

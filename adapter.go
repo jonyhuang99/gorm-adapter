@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"git.code.oa.com/trpc-go/trpc-go/log"
+	lib "git.code.oa.com/omc/libraries"
 	"math"
 	"runtime"
 	"strings"
@@ -249,6 +250,9 @@ func loadPolicyLine(line CasbinRule, model model.Model) {
 
 // LoadPolicy loads policy from database.
 func (a *Adapter) LoadPolicy(model model.Model) error {
+
+	ctx := lib.NewCtxWithReqid()
+
 	var lines []CasbinRule
 	var per = 3000
 
@@ -257,7 +261,7 @@ func (a *Adapter) LoadPolicy(model model.Model) error {
 	if err := a.db.Table(a.tablePrefix + "casbin_rule").Count(&count).Error; err != nil {
 		return err
 	}
-	log.Infof("LoadPolicy: total %d need to load", count)
+	log.InfoContextf(ctx,"LoadPolicy: total %d need to load", count)
 
 	allPage := int(math.Ceil(float64(count)/float64(per)))
 	loadedLines := 0
@@ -275,11 +279,12 @@ func (a *Adapter) LoadPolicy(model model.Model) error {
 	}
 
 	if count != loadedLines {
-		log.Infof("LoadPolicy: loaded lines err total(%d) != loaded(%d), retry ...", count, loadedLines)
+
+		log.ErrorContext(lib.NewCronError(ctx, "LoadPolicy", fmt.Errorf("LoadPolicy: loaded lines err total(%d) != loaded(%d), retry ...", count, loadedLines)))
 		time.Sleep(time.Second)
 		return a.LoadPolicy(model)
 	} else {
-		log.Infof("LoadPolicy: loaded %d", int(count))
+		log.InfoContextf(ctx,"LoadPolicy: loaded %d", int(count))
 	}
 	return nil
 }
