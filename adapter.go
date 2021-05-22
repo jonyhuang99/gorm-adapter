@@ -366,10 +366,11 @@ func (a *Adapter) LoadPolicy(model model.Model) error {
 
 	var lines []CasbinRule
 	var per = 3000
+	db := a.db.WithContext(ctx)
 
 	// 防止数量大，使用分页拉取
 	var count int64
-	if err := a.db.Table(a.tablePrefix + "casbin_rule").Count(&count).Error; err != nil {
+	if err := db.Table(a.tablePrefix + "casbin_rule").Count(&count).Error; err != nil {
 		return err
 	}
 	log.InfoContextf(ctx, "LoadPolicy: total %d need to load", count)
@@ -379,7 +380,7 @@ func (a *Adapter) LoadPolicy(model model.Model) error {
 	var page int
 	for page = 1; page <= allPage; page++ {
 		offset := (page - 1) * per
-		if err := a.db.Table(a.tablePrefix + "casbin_rule").Offset(offset).Limit(per).Find(&lines).Error; err != nil {
+		if err := db.Table(a.tablePrefix + "casbin_rule").Offset(offset).Limit(per).Find(&lines).Error; err != nil {
 			return err
 		}
 
